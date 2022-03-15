@@ -2,14 +2,17 @@ import numpy as np
 import collections
 
 class sparse_mat():
-    def __init__(self,mat_as_dict=None,csr=None):  
-        self.sm_as_dok = mat_as_dict
-        if csr is not None:
-            self.csr_val = csr[0]
-            self.csr_col = csr[1]
-            self.csr_row = csr[2]
+    def __init__(self,mat,mat_as_dict=None):  
+        if mat_as_dict is not None:
+            self.sm_as_dok = mat_as_dict
+            res = self.dok_to_csr()
+            self.csr_val = res[0]
+            self.csr_col = res[1]
+            self.csr_row = res[2]
+        
         else:
-            res = self.dok_to_csr(mat_as_dict)
+            self.mat_to_dok(mat)
+            res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
@@ -17,9 +20,15 @@ class sparse_mat():
         self.m = len(self.csr_row)-1
         self.n = max(self.csr_col)+1
         self.scalar = 1
+    
+    def mat_to_dok(self,mat):
+        for row in mat:
+            for col,val in enumerate(row):
+                if val != 0:
+                    self.sm_as_dok[(row,col)] = val
 
-    def dok_to_csr(self,mat_as_dict):
-        od = collections.OrderedDict(sorted(mat_as_dict.items()))
+    def dok_to_csr(self):
+        od = collections.OrderedDict(sorted(self.sm_as_dok.items()))
         csr_val = []
         csr_col = []
         n_rows,_ = list(od.items())[-1]
@@ -121,7 +130,7 @@ class sparse_mat():
         print("Cols:",self.csr_col)
         print("Compresed rows:",self.csr_row)
     
-    def dim(self):
+    def shape(self):
         return self.m,self.n
 
     # Static methods apply when operating with TWO sparse matrices
