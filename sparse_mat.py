@@ -1,28 +1,7 @@
 import numpy as np
 import collections
 import itertools
-from operator import add
-from functools import reduce
 
-class SPA():
-    def __init__(self,n):
-        self.w  = [0 for _ in range(n)]
-        self.b  = [False for _ in range(n)]
-        self.ls = []
-    
-    def scatter(self,val,pos):
-        if not self.b[pos]:
-            self.w[pos] = val
-            self.b[pos] = True
-            self.ls.append(pos)
-        else:
-            self.w[pos] += val
-
-    def gather(self,val,col,nzc):
-        nzi = 0
-        for x in self.ls:
-            0
-        return nzi
 
 class sparse_mat():
     """
@@ -33,55 +12,55 @@ class sparse_mat():
     """
     def __init__(self,mat=None,mat_as_dict=None,csr=None,dim=None): 
         if mat_as_dict is not None:
+            self.sm_as_dok = mat_as_dict
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
             self.m = dim[0]
-            self.n = dim[1]
-        
+            self.n = dim[1]   
         elif csr is not None:
             self.csr_val = csr[0]
             self.csr_col = csr[1]
             self.csr_row = csr[2]
             self.m = dim[0]
             self.n = dim[1]
-        else:
-            self.mat_to_dok(mat)
+            self.sm_as_dok = self.csr_to_dok()
+        elif mat is not None:
+            self.sm_as_dok = self.mat_to_dok(mat)
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
             self.m = len(mat)
             self.n = len(mat[0])
-
-        # Num of rows and cols
-        self.sm_as_dok = {}
-        if mat_as_dict is not None:
-            self.sm_as_dok = mat_as_dict
         else:
-            self.csr_to_dok()
+            raise ValueError("Parameters needed for sparse matrix")
     
     def mat_to_dok(self,mat):
         """
         Converts the dense matrix to dok format and stores it as a class atribute.
         """
-        for row in mat:
+        res = {}
+        for ir,row in enumerate(mat):
             for col,val in enumerate(row):
                 # Store each element diferent from 0
                 if val != 0:
-                    self.sm_as_dok[(row,col)] = val
+                    res[(ir,col)] = val
+        return res
 
     def csr_to_dok(self):
         """
         Converts the csr matrix to dok format and stores it as a class atribute.
         """
+        res = {}
         for row in range(self.m):
             cols = self.csr_col[self.csr_row[row]:self.csr_row[row+1]]
             vals = self.csr_val[self.csr_row[row]:self.csr_row[row+1]]
             for col,val in zip(cols,vals):
                 # Store each element in dok format 
-                self.sm_as_dok[(row,col)] = val
+                res[(row,col)] = val
+        return res
 
     def dok_to_csr(self):
         """
@@ -299,7 +278,32 @@ class sparse_mat():
 
     @staticmethod
     def dot(sm1,sm2):
-        return 0
+        if sm1.n != sm2.m:
+            raise ValueError("Inconsistent shapes")
+        res_val = []
+        res_col = []
+        res_row = [0]
+        for r in range(sm1.m):
+            start, end = sm1.csr_row[r], sm1.csr_row[r + 1]
+            tmp_val = sm1.csr_val[start:end]
+            tmp_col = sm1.csr_col[start:end]
+            spa = [0 for _ in range(sm1.n)]
+            for i,e in zip(tmp_col,tmp_val):
+                start2, end2 = sm2.csr_row[i], sm2.csr_row[i + 1]
+                tmp_val2 = sm2.csr_val[start2:end2]
+                tmp_col2 = sm2.csr_col[start2:end2]
+                for c,v in zip(tmp_col2,tmp_val2):
+                    spa[c] +=e*v
+            n_elems = 0
+            for k,x in enumerate(spa):
+                if x != 0:
+                    res_val.append(x)
+                    res_col.append(k)
+                    n_elems += 1
+            res_row.append(res_row[-1]+ n_elems)
+        
+        return sparse_mat(csr=[res_val,res_col,res_row],dim=[sm1.m,sm2.n])
+
     
     @staticmethod
     def tensor(sm1,sm2):
