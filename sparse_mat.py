@@ -9,91 +9,198 @@ class sparse_mat():
     Stores the three csr vectors and also a dok (dictionary of {k:(row,col) v:(value)})
     representation of the dense matrix.
     Also stores the dimensions of the matrix.
+
+
+    Compressed Sparse Row matrix
+    This can be instantiated in several ways:
+        sparse_mat(mat=M)
+            with a dense matrix or 2-dim ndarray M
+        sparse_mat(csr=S,dim=d)
+            with another sparse matrix by just sending the triplet of csr array-like implementation 
+            (values,columns,compressed rows), the dim parameter is a tuple representing (#rows,#cols)
+        sparse_mat(dok=D,dim=d)
+            with a dok representation of a sparse matrix, just need the dictionary and the dim as before
+            
+    Attributes
+    ----------
+    dok : dictionary / hash table
+        Dok representation of the matrix
+    csr_val : list
+         CSR format data array of the non zero elements of the matrix
+    csr_col : list
+        CSR format data array of the column index of the non zero elements of the matrix
+    csr_row : list
+        CSR format data array of the compressed rows of the non zero elements of the matrix
+    m : int
+        First dimension of the matrix aka number of rows
+    n : int
+        Second dimension of the matrix aka number of columns
+   
+    Notes on CSR
+    ------------
+    Advantages of the CSR format
+      - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
+      - efficient row slicing
+      - fast matrix vector products
+    Disadvantages of the CSR format
+      - slow column slicing operations (consider CSC)
+      - changes to the sparsity structure are expensive i.e. adding elements (consider LIL or DOK)
+
+    Methods
+    -------
+    See each method for detailed information, the following is just a list.
+        mat_to_dok(mat)
+        show()
+        shape()
+        csr_to_dok()
+        dok_to_csr()
+        csr_to_mat()
+        transpose()
+        left_vec_dot()
+        right_vec_dot()
+        left_mat_dot()
+        right_mat_dot()
+        left_mat_tensor()
+        right_mat_tensor()
+    
+    Static methods
+    --------------
+    See each static method for detailed information, the following is just a list.
+        add()
+        dot()
+        tensor()
+
+    Notes on methods
+    ----------------
+    Recall that in Python, methods are applied to instances of the class and Static methods to the class itself.
+    So for example:
+        >>> m1 = sparse_mat(M)
+        >>> m2 = m1.transpose()
+        >>> m3 = sparse_mat.dot(m1,m2)
     """
-    def __init__(self,mat=None,mat_as_dict=None,csr=None,dim=None): 
-        if mat_as_dict is not None:
-            self.sm_as_dok = mat_as_dict
+    def __init__(self,mat=None,dok=None,csr=None,dim=None): 
+        """
+        Instantiates the sparse matrix by the given matrix in some format and its dimension.
+        Dimension can be avoided in case of instantiating from a dense matrix, error halts if not provided.
+        """
+        # Matrix given in Dok format
+        if dok is not None:
+            self.dok = dok
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
             self.m = dim[0]
-            self.n = dim[1]   
+            self.n = dim[1]
+            
+        # Matrix given in CSR format
         elif csr is not None:
             self.csr_val = csr[0]
             self.csr_col = csr[1]
             self.csr_row = csr[2]
             self.m = dim[0]
             self.n = dim[1]
-            self.sm_as_dok = self.csr_to_dok()
+            self.dok = self.csr_to_dok()
+
+        # Matrix given in Dense format
         elif mat is not None:
-            self.sm_as_dok = self.mat_to_dok(mat)
+            self.dok = self.mat_to_dok(mat)
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
             self.m = len(mat)
             self.n = len(mat[0])
+        
+        # Otherwise, error
         else:
             raise ValueError("Parameters needed for sparse matrix")
     
+    def show(self):
+        """
+        Prints the three CSR arrays of the matrix
+        """
+        print("Values:",self.csr_val)
+        print("Cols:",self.csr_col)
+        print("Compresed rows:",self.csr_row)
+    
+    def shape(self):
+        """
+        Returns Shape of the matrix as a tuple
+        """
+        return self.m,self.n
+
     def mat_to_dok(self,mat):
         """
-        Converts the dense matrix to dok format and stores it as a class atribute.
+        Returns Dok format of a Dense matrix.
         """
-        res = {}
-        for ir,row in enumerate(mat):
-            for col,val in enumerate(row):
+        dok = {}
+        for row_ind,row in enumerate(mat):
+            for col_ind,val in enumerate(row):
                 # Store each element diferent from 0
                 if val != 0:
-                    res[(ir,col)] = val
-        return res
+                    dok[(row_ind,col_ind)] = val
+        return dok
 
     def csr_to_dok(self):
         """
-        Converts the csr matrix to dok format and stores it as a class atribute.
+        Returns Dok format of a CSR matrix, CSR matrix previously instantiated.
+        (Should be called only when instantiated)
         """
-        res = {}
-        for row in range(self.m):
-            cols = self.csr_col[self.csr_row[row]:self.csr_row[row+1]]
-            vals = self.csr_val[self.csr_row[row]:self.csr_row[row+1]]
-            for col,val in zip(cols,vals):
+        dok = {}
+        for row_ind in range(self.m):
+            # Getting row elements and columns
+            cols = self.csr_col[self.csr_row[row_ind]:self.csr_row[row_ind+1]]
+            vals = self.csr_val[self.csr_row[row_ind]:self.csr_row[row_ind+1]]
+            for col_ind,val in zip(cols,vals):
                 # Store each element in dok format 
-                res[(row,col)] = val
-        return res
+                dok[(row_ind,col_ind)] = val
+        return dok
 
     def dok_to_csr(self):
         """
-        Returns the dok sparse matrix to csr sparse matrix format.
+        Returns CSR format of a Dok matrix, Dok matrix previously instantiated.
+        (Should be called only when instantiated)
         """
         # Sort dictionary by rows
         od = collections.OrderedDict(sorted(self.sm_as_dok.items()))
+        n_rows,_ = list(od.items())[-1]
         # Prepare the three lists for csr
         csr_val = []
         csr_col = []
-        n_rows,_ = list(od.items())[-1]
         csr_row = np.zeros(n_rows[0]+2)
+
+        # Add to the CSR arrays the correspondent values, col index and row compresion
         for k, v in od.items():
             csr_val.append(v)
             csr_col.append(k[1])
             csr_row[k[0]+1] += 1
+
+        # Extra step needed for row compression (cumulative sum)
         return np.array(csr_val),np.array(csr_col),np.cumsum(csr_row, dtype=int)
     
     def csr_to_mat(self):
-        res = np.zeros((self.m,self.n))
+        """
+        Returns Dense format of the CSR matrix, CSR matrix previously instantiated.
+        """
+        dense = np.zeros((self.m,self.n))
+        # Iterate though rows
         for row in range(self.m):
+            # Uncompress rows
             cols = self.csr_col[self.csr_row[row]:self.csr_row[row+1]]
             vals = self.csr_val[self.csr_row[row]:self.csr_row[row+1]]
             for col,val in zip(cols,vals):
-                # Store each element in dok format 
-                res[row][col] = val
-        return res
+                # Store each element in dense mat 
+                dense[row][col] = val
+        return dense
     
     def transpose(self):
         """
-        Returns a the transpose of the sparse matrix as a new sparse matrix.
-        The algorithm transforms internally from a csr format to a csc format, compresion of columns istead of rows.
+        Returns the transpose of the sparse matrix as a new sparse matrix.
+        The algorithm transforms internally from a CSR format to a CSC format. 
+        (Compresion of columns istead of rows)
         """
+        # Initialize transposed matrix
         nnz = len(self.csr_val)
 
         trans_val = [0 for _ in range(nnz)]
@@ -124,22 +231,10 @@ class sparse_mat():
         return sparse_mat(csr=[np.array(trans_val),np.array(trans_col),np.array(trans_row)],dim=[self.n,self.m])
     
     # Operations with dense vectors and dense matrix
-
-    def left_vec_dot(self,arr):
-        """
-
-        """
-        if len(arr[0]) != self.m:
-            raise ValueError("Inconsistent shapes")
-        res = [0 for _ in range(self.m)]
-        trans = self.transpose()
-        for i in range(self.m):
-            for k in range(trans.csr_row[i], trans.csr_row[i+1]):
-                j = trans.csr_col[k]
-                res[i] += trans.csr_val[k] * arr[0][j]
-        return np.reshape(np.array(res),(1,self.n))
-
     def right_vec_dot(self,arr):
+        """
+        Returns the column vector of application of the matrix to vector on the right: v -> Av
+        """
         if len(arr) != self.n:
             raise ValueError("Inconsistent shapes")
         res = [0 for _ in range(self.n)]
@@ -148,8 +243,27 @@ class sparse_mat():
                 j = self.csr_col[k]
                 res[i] += self.csr_val[k] * arr[j][0]
         return np.reshape(np.array(res),(self.m,1))
+
+    def left_vec_dot(self,arr):
+        """
+        Returns the row vector of application of the matrix to vector on the left: v -> vA
+        """
+        if len(arr[0]) != self.m:
+            raise ValueError("Inconsistent shapes")
+        res = [0 for _ in range(self.m)]
+        # Same as right_vec_dot but the sparse matrix gets transposed
+        trans = self.transpose()
+        for i in range(self.m):
+            for k in range(trans.csr_row[i], trans.csr_row[i+1]):
+                j = trans.csr_col[k]
+                res[i] += trans.csr_val[k] * arr[0][j]
+        return np.reshape(np.array(res),(1,self.n))
     
     def left_mat_dot(self,dense_mat):
+        """
+        Returns the Dense matrix after application of the matrix to the Dense Matrix on the left: DM -> DM·SM
+        """
+        # Simple algorith for matrix multiplication, traversing left mat by rows and right mat by columns.
         n = len(dense_mat[0])
         if n != self.m:
             raise ValueError("Inconsistent shapes")
@@ -167,6 +281,10 @@ class sparse_mat():
         return res
 
     def right_mat_dot(self,dense_mat):
+        """
+        Returns the Dense matrix after application of the matrix to the Dense Matrix on the right: DM -> SM·DM
+        """
+        # Algorithm consist of application of right_vec_dot m times n times beeing n the number of columns of Dense mat
         m = len(dense_mat)
         if self.n != m:
             raise ValueError("Inconsistent shapes")
@@ -178,6 +296,14 @@ class sparse_mat():
         return res
     
     def left_mat_tensor(self,dense_mat):
+        """
+        Compute the tensor product of the matrix and the Dense Matrix on the left: DM -> DM x SM
+        Returns a Sparse matrix
+        """
+        # Algorithm consist of incremental building of a sparse matrix in CRS format by computing the resulting rows
+        # Since there is no restriction on zero values in the Dense mat, we have to check elements and not compute
+        # the multiplication but still remember the index and position in order to keep consistency
+        # Can also be interpreted as the kroneker product of matrices
         m = len(dense_mat)
         n = len(dense_mat[0])
         res_val = []
@@ -211,6 +337,17 @@ class sparse_mat():
 
 
     def right_mat_tensor(self,dense_mat):
+        """
+        Compute the tensor product of the matrix and the Dense Matrix on the right: DM -> SM x DM
+        Returns a Sparse matrix
+        """
+        # Algorithm is basically the same as left_mat_tensor but in this case the code is cleaner since
+        # we are traversing now the sparse matrix by rows and 'copying chunks' of the dense mat so the
+        # traverseof  the sparse mat by columns is much simpler and we dont need to take care of zeros
+        # as those get eliminated while we are constucting the result matrix
+        # Note that in this case the most inner loop can not be parallelized as we did in the mentioned method above
+        # with the use of the high order function map
+        # Can also be interpreted as the kroneker product of matrices
         m = len(dense_mat)
         n = len(dense_mat[0])
         res_val = []
@@ -231,24 +368,22 @@ class sparse_mat():
 
         return sparse_mat(csr=[res_val,res_col,res_row],dim=[self.m*m,self.n*n])
 
-    def show(self):
-        print("Values:",self.csr_val)
-        print("Cols:",self.csr_col)
-        print("Compresed rows:",self.csr_row)
-    
-    def shape(self):
-        return self.m,self.n
 
-    # Static methods apply when operating with TWO sparse matrices
-
+    # Static methods apply when operating with TWO sparse matrices so we dont have to deal with commutativity problems
+    # as the user selects the applying order by the order of the parameters, equivalently those methods can be seen
+    # as prefix operators
     @staticmethod
     def add(sm1,sm2):
+        """
+        Returns the addition of two Sparse matrices as a nes Sparse matrix
+        """
+        # TODO-Code can be much easier and optimized 
         if sm1.m != sm2.m or sm1.n != sm2.n:
             raise ValueError("Inconsistent shapes")
         res_val = []
         res_col = []
         res_row = [0]
-        for row in range(len(sm1.csr_row)-1):
+        for row in range(sm1.m):
             cols_row_sm1 = sm1.csr_col[sm1.csr_row[row]:sm1.csr_row[row+1]]
             cols_row_sm2 = sm2.csr_col[sm2.csr_row[row]:sm2.csr_row[row+1]]
 
@@ -278,6 +413,10 @@ class sparse_mat():
 
     @staticmethod
     def dot(sm1,sm2):
+        """
+        Returns the dot product of two Sparce matrices as anew Sparse Matrix
+        """
+        # Optimized algorithm exploiting CSR structure using a SPA (sparse accomulator) and using row-wise multiplication
         if sm1.n != sm2.m:
             raise ValueError("Inconsistent shapes")
         res_val = []
@@ -307,6 +446,16 @@ class sparse_mat():
     
     @staticmethod
     def tensor(sm1,sm2):
+        """
+        Returns the tensor product of two Sparse matrices as a new Sparse matrix
+        """
+        # Follows the idea of combining the the two previous tensor product algorithms metioned before
+        # Iterate through the rows of left mat, for each elem 'copy chunk' of each matrix in desired final position
+        # We don't have the problem of 0 elemnts sice we ensure there are no zeros on our CSR implementations.
+        # We can also exploit multiples properies by iterating just though existing element and can easily precompute 
+        # the number of elements that we will add on each row of the final matrix, nevertheless a new problem arises
+        # as we have to use a flag to avoid repeating calculations if a row has more than one element.
+        # In other words we can precompute how many element we will add on a new row by knowing the rows of the two matrices   
         res_val = []
         res_col = []
         res_row = [0]
@@ -329,28 +478,3 @@ class sparse_mat():
             flag = True
             print("end")
         return sparse_mat(csr=[res_val,res_col,res_row],dim=[sm1.m*sm2.m,sm1.n*sm2.n])
-        
-
-
-
-[[1., 0., 0., 0.],
- [5., 0., 0., 1.],
- [0., 0., 2., 0.],
- [0., 3., 0., 0.]]
-
-[[ 1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 5.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  2.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 5.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1., 0.,  0.,  0.],
- [25.,  0.,  0.,  5.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  5., 0.,  0.,  1.],
- [ 0.,  0., 10.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  2.,  0.],
- [ 0., 15.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 3.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 10.,  0.,  0.,  2.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  4.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  6.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0., 15.,  0.,  0.,  3.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  0.,  6.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.],
- [ 0.,  0.,  0.,  0.,  0.,  9.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 0.,  0.,  0.]]
