@@ -1,9 +1,9 @@
 import numpy as np
 import collections
 import itertools
-from base_mat import base_mat, mat_type
 
-class sparse_mat(base_mat):
+
+class sparse_mat():
     """
     The class implements sparse matrices using the csr (compressed rows) model.
     Stores the three csr vectors and also a dok (dictionary of {k:(row,col) v:(value)})
@@ -83,19 +83,15 @@ class sparse_mat(base_mat):
         Instantiates the sparse matrix by the given matrix in some format and its dimension.
         Dimension can be avoided in case of instantiating from a dense matrix, error halts if not provided.
         """
-        # base mat implementation
-        self.type = mat_type.sparse
-        
         # Matrix given in Dok format
         if dok is not None:
             self.dok = dok
-            self.m = dim[0]
-            self.n = dim[1]
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
-
+            self.m = dim[0]
+            self.n = dim[1]
             
         # Matrix given in CSR format
         elif csr is not None:
@@ -108,13 +104,13 @@ class sparse_mat(base_mat):
 
         # Matrix given in Dense format
         elif mat is not None:
-            self.m = len(mat)
-            self.n = len(mat[0])
             self.dok = self.mat_to_dok(mat)
             res = self.dok_to_csr()
             self.csr_val = res[0]
             self.csr_col = res[1]
             self.csr_row = res[2]
+            self.m = len(mat)
+            self.n = len(mat[0])
         
         # Otherwise, error
         else:
@@ -127,6 +123,12 @@ class sparse_mat(base_mat):
         print("Values:",self.csr_val)
         print("Cols:",self.csr_col)
         print("Compresed rows:",self.csr_row)
+    
+    def shape(self):
+        """
+        Returns Shape of the matrix as a tuple
+        """
+        return self.m,self.n
 
     def mat_to_dok(self,mat):
         """
@@ -161,7 +163,7 @@ class sparse_mat(base_mat):
         (Should be called only when instantiated)
         """
         # Sort dictionary by rows
-        od = collections.OrderedDict(sorted(self.dok.items()))
+        od = collections.OrderedDict(sorted(self.sm_as_dok.items()))
         n_rows,_ = list(od.items())[-1]
         # Prepare the three lists for csr
         csr_val = []
@@ -219,8 +221,8 @@ class sparse_mat(base_mat):
                 col = self.csr_col[j]
                 dest = trans_row[col]
 
-                trans_col[dest] = row
-                trans_val[dest] = self.csr_val[j]
+                trans_col[dest] = row;
+                trans_val[dest] = self.csr_val[j];
                 trans_row[col] += 1
         # now shift trans_row
         trans_row = [0] + trans_row
@@ -236,7 +238,7 @@ class sparse_mat(base_mat):
         if len(arr) != self.n:
             raise ValueError("Inconsistent shapes")
         res = [0 for _ in range(self.n)]
-        for i in range(self.n):
+        for i in range(self.m):
             for k in range(self.csr_row[i], self.csr_row[i+1]):
                 j = self.csr_col[k]
                 res[i] += self.csr_val[k] * arr[j][0]
@@ -267,15 +269,12 @@ class sparse_mat(base_mat):
             raise ValueError("Inconsistent shapes")
         m = len(dense_mat)
         res = np.ndarray((m,self.n))
-        csr_row = 0
-        for i in range(n):
-            start, end = self.csr_row[i], self.csr_row[i + 1]
-            for j in range(start, end):
-                col, val = self.csr_col[j], self.csr_val[j]
-                for k in range(n):
-                    dense_value = dense_mat[k][csr_row]
-                    res[k][col] += val * dense_value
-            csr_row += 1
+        for i in range(m):
+            for k in range(n):
+                start, end = self.csr_row[k], self.csr_row[k + 1]
+                for j in range(start, end):
+                    col, val = self.csr_col[j], self.csr_val[j]
+                    res[i][k] += val * dense_mat[i][col]
         return res
 
     def right_mat_dot(self,dense_mat):
@@ -365,11 +364,7 @@ class sparse_mat(base_mat):
                             res_col.append(col+c*n)
 
         return sparse_mat(csr=[res_val,res_col,res_row],dim=[self.m*m,self.n*n])
-    
-    ### OVERRIDE BASE_MAT CLASS METHODS ###
-    def nparray (self):
-        return self.csr_to_mat()
-    ### END OVERRIDE ###
+
 
     # Static methods apply when operating with TWO sparse matrices so we dont have to deal with commutativity problems
     # as the user selects the applying order by the order of the parameters, equivalently those methods can be seen
@@ -480,3 +475,4 @@ class sparse_mat(base_mat):
             flag = True
             print("end")
         return sparse_mat(csr=[res_val,res_col,res_row],dim=[sm1.m*sm2.m,sm1.n*sm2.n])
+
