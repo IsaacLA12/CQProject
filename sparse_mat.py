@@ -268,7 +268,7 @@ class sparse_mat():
         if n != self.m:
             raise ValueError("Inconsistent shapes")
         m = len(dense_mat)
-        res = np.ndarray((m,self.n))
+        res = np.zeros((m,self.n))
         for i in range(m):
             for k in range(n):
                 start, end = self.csr_row[k], self.csr_row[k + 1]
