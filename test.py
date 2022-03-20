@@ -58,16 +58,16 @@ def test4 (): # dense tensor product
 
 def test5 (): # lazy mat
     a = dense_mat (np.array ([[0,1],[1,0]]))
-    # b = sparse_mat (mat=[ [1, 0], [0, 1] ])
-    b = dense_mat (np.array([ [1, 0], [0, 1] ]))
-    c = mat_math_util.mat_mul(a, b)
+    b = sparse_mat (mat=[ [1, 0], [0, 1] ])
+    # b = dense_mat (np.array([ [1, 0], [0, 1] ]))
+    c = mat_math_util.mat_mul(b, a)
     d = mat_math_util.mat_mul(b, c)
-    print (d.nparray())
-    print ( b.nparray()@(a.nparray()@b.nparray()) )
-    # print (b.left_mat_dot(a.nparray()))
+    # print (d.nparray())
+    # print ( b.nparray()@(b.nparray()@a.nparray()) )
+    print (b.left_mat_dot( np.array ([[0,1],[1,0]]) ))
     # print (a.nparray()@np.array([ [1, 0], [0, 1] ]))
     
 if __name__ == '__main__':
     # r = quantum_registor(3)
-    # print (r.state())
+    # print (r.h_all())
     test5()
