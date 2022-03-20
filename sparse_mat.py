@@ -163,7 +163,7 @@ class sparse_mat():
         (Should be called only when instantiated)
         """
         # Sort dictionary by rows
-        od = collections.OrderedDict(sorted(self.sm_as_dok.items()))
+        od = collections.OrderedDict(sorted(self.dok.items()))
         n_rows,_ = list(od.items())[-1]
         # Prepare the three lists for csr
         csr_val = []
