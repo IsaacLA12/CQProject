@@ -1,5 +1,8 @@
 import numpy as np
+<<<<<<< HEAD
 from dense_mat import dense_mat
+=======
+>>>>>>> parent of 0acbc55 (update)
 import mat_math_util
 
 class quantum_registor ():
@@ -15,6 +18,7 @@ class quantum_registor ():
     def set_initial_state (self, n, state):
         self.qbits[n] = state
     
+<<<<<<< HEAD
     def h_all (self):
         h = dense_mat((1 / np.sqrt(2)) * np.array([[1, 1,], [1, -1]]))
         m = h
@@ -26,6 +30,8 @@ class quantum_registor ():
         '''Apply hadamard to nth qbit.'''
         pass
 
+=======
+>>>>>>> parent of 0acbc55 (update)
     def state (self):
         '''Returns state vector of entangled qbits.'''
         return mat_math_util.vec_tensor_all(self.qbits)
