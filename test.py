@@ -58,8 +58,8 @@ def test4 (): # dense tensor product
 
 def test5 (): # lazy mat
     a = dense_mat (np.array ([[0,1],[1,0]]))
-    # b = sparse_mat (mat=[ [1, 0], [0, 1] ])
-    b = dense_mat (np.array([ [1, 0], [0, 1] ]))
+    b = sparse_mat (mat=[ [1, 0], [0, 1] ])
+    # b = dense_mat (np.array([ [1, 0], [0, 1] ]))
     c = mat_math_util.mat_mul(a, b)
     d = mat_math_util.mat_mul(b, c)
     print (d.nparray())

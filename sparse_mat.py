@@ -1,9 +1,10 @@
 import numpy as np
 import collections
 import itertools
+from base_mat import base_mat, mat_type
 
 
-class sparse_mat():
+class sparse_mat(base_mat):
     """
     The class implements sparse matrices using the csr (compressed rows) model.
     Stores the three csr vectors and also a dok (dictionary of {k:(row,col) v:(value)})
@@ -83,6 +84,9 @@ class sparse_mat():
         Instantiates the sparse matrix by the given matrix in some format and its dimension.
         Dimension can be avoided in case of instantiating from a dense matrix, error halts if not provided.
         """
+        # Implementing base mat
+        self.type = mat_type.sparse
+        
         # Matrix given in Dok format
         if dok is not None:
             self.dok = dok
@@ -365,6 +369,12 @@ class sparse_mat():
 
         return sparse_mat(csr=[res_val,res_col,res_row],dim=[self.m*m,self.n*n])
 
+    ### OVERRIDE BASE MATRIX CLASS ###
+    def get (self, i, j):
+        return self.dok[(i,j)]
+    
+    def nparray(self):
+        return self.csr_to_mat()
 
     # Static methods apply when operating with TWO sparse matrices so we dont have to deal with commutativity problems
     # as the user selects the applying order by the order of the parameters, equivalently those methods can be seen

@@ -7,6 +7,9 @@ from dense_mat import dense_mat
 
 import numpy as  np
 
+def identity (nqbits):
+    return sparse_mat(mat=np.eye(int(2**nqbits)))
+
 def apply (matrix:base_mat, vector):
     '''
     Apply a matrix to a vector ( { MATRIX } · [ vector ] )
@@ -17,7 +20,7 @@ def apply (matrix:base_mat, vector):
     '''
     if type(matrix) == lazy_mat:
         matrix = matrix.eval ()
-    return matrix.nparray() @ np.reshape(vector, (len(vector), 1))
+    return ( matrix.nparray() @ np.reshape(vector, (len(vector), 1)) ).flatten()
     
 def mat_scalar_mul (scalar, matrix:base_mat, lazy = True):
     '''Scalar multiplication of matrix.'''
@@ -32,7 +35,6 @@ def mat_mul (left:base_mat, right:base_mat, lazy = True):
     '''Matrix multiplication. ( { LEFT MATRIX }·{ RIGHT MATRIX } )'''
     if lazy:
         return lazy_mat(left, right, mat_mul)
-    print ("calc")
     # Evaluate lazy matrix
     if left.type == mat_type.lazy:
         left = left.eval()
@@ -43,7 +45,6 @@ def mat_mul (left:base_mat, right:base_mat, lazy = True):
         if right.type == mat_type.dense: # Dense * Dense
             return dense_mat(np.dot(left.mat, right.mat))
         if right.type == mat_type.sparse: # Dense * Sparse
-            print ("DS")
             return dense_mat(right.left_mat_dot(left.nparray()))
     if left.type == mat_type.sparse:
         if right.type == mat_type.dense: # Sparse * Dense
