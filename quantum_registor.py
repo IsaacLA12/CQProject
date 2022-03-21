@@ -10,6 +10,7 @@ class quantum_registor ():
     
     def __init__ (self, size):
         self.size = size
+        self.size_sq = int(2**size)
         self.matrix = mat_math_util.identity(size)
         qbits = []
         for i in range(size):
@@ -30,7 +31,7 @@ class quantum_registor ():
     
     def G (self):
         '''The input s should be a numpy 1d array'''
-        psi_ket = np.reshape(np.array(self.state), (len(s), 1))
+        psi_ket = np.reshape(np.full(self.size_sq, 1/np.sqrt(self.size_sq)), (len(s), 1))
         m = 2*psi_ket@psi_ket.T - np.eye(int(2**self.size))
         self.matrix = mat_math_util.mat_mul(self.matrix, sparse_mat(m))
     
@@ -60,25 +61,29 @@ def test_o(s, n=3):
     s_ket = np.reshape(np.array(s), (len(s), 1))
     return np.eye(int(2**n)) - 2*s_ket@s_ket.T
 
+
+
 if __name__ == '__main__':
-    s = np.zeros(8)
+    n = 5; sz = int(2**n)
+    s = np.zeros(sz)
     s[2] = 1
-    states = [np.full(8, 1/np.sqrt(8))]
-    print (test_o(s))
-    print (test_g(states[0]))
-    exit()
+    states = [np.full(sz, 1/np.sqrt(sz))]
+    # print (test_o(s))
+    # print (test_g(states[0]))
+    s_ = [f'|{i}⟩' for i in range(sz)]
     for i in range(10):
-        state = states[-1]
-        state_ket = np.reshape(np.array(state), (len(state), 1))
-        result = test_g(np.full(8, 1/np.sqrt(8)))@test_o(s)@state_ket
-        states.append(result.flatten())
-        
-        s_ = [f'|{i}⟩' for i in range(8)]
         p = states[-1]**2
         p /= np.sum(p)
-        plt.title(f'{i}')
+        plt.figure(1, (12,5))
+        plt.title(f'Iteration {i}')
         plt.bar(s_, p)
-        plt.show()
+        plt.savefig(f'{n}bit_iter_{i}')
+        plt.clf()
+
+        state = states[-1]
+        state_ket = np.reshape(np.array(state), (len(state), 1))
+        result = test_g(states[0], n=n)@test_o(s, n=n)@state_ket
+        states.append(result.flatten())
     
     
     # qr = quantum_registor(3)
