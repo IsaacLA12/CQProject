@@ -61,6 +61,7 @@ def test5 (): # lazy mat
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     b = sparse_mat (mat=[ [1, 0], [0, 1] ])
     # b = dense_mat (np.array([ [1, 0], [0, 1] ]))
     c = mat_math_util.mat_mul(b, a)
@@ -73,13 +74,18 @@ def test5 (): # lazy mat
     b = dense_mat (np.array([ [1, 0], [0, 1] ]))
     c = mat_math_util.mat_mul(a, b)
 >>>>>>> parent of 0acbc55 (update)
+=======
+    # b = sparse_mat (mat=[ [1, 0], [0, 1] ])
+    b = dense_mat (np.array([ [1, 0], [0, 1] ]))
+    c = mat_math_util.mat_mul(a, b)
+>>>>>>> parent of f206243 (1)
     d = mat_math_util.mat_mul(b, c)
-    # print (d.nparray())
-    # print ( b.nparray()@(b.nparray()@a.nparray()) )
-    print (b.left_mat_dot( np.array ([[0,1],[1,0]]) ))
+    print (d.nparray())
+    print ( b.nparray()@(a.nparray()@b.nparray()) )
+    # print (b.left_mat_dot(a.nparray()))
     # print (a.nparray()@np.array([ [1, 0], [0, 1] ]))
     
 if __name__ == '__main__':
     # r = quantum_registor(3)
-    # print (r.h_all())
+    # print (r.state())
     test5()

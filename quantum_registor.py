@@ -2,6 +2,7 @@ import numpy as np
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from dense_mat import dense_mat
 =======
 >>>>>>> parent of 0acbc55 (update)
@@ -9,6 +10,8 @@ from dense_mat import dense_mat
 >>>>>>> parent of 0acbc55 (update)
 =======
 >>>>>>> parent of 0acbc55 (update)
+=======
+>>>>>>> parent of f206243 (1)
 import mat_math_util
 
 class quantum_registor ():
@@ -24,6 +27,7 @@ class quantum_registor ():
     def set_initial_state (self, n, state):
         self.qbits[n] = state
     
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -44,6 +48,8 @@ class quantum_registor ():
 >>>>>>> parent of 0acbc55 (update)
 =======
 >>>>>>> parent of 0acbc55 (update)
+=======
+>>>>>>> parent of f206243 (1)
     def state (self):
         '''Returns state vector of entangled qbits.'''
         return mat_math_util.vec_tensor_all(self.qbits)
