@@ -60,10 +60,13 @@ def test5 (): # lazy mat
     a = dense_mat (np.array ([[0,1],[1,0]]))
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     b = sparse_mat (mat=[ [1, 0], [0, 1] ])
     # b = dense_mat (np.array([ [1, 0], [0, 1] ]))
     c = mat_math_util.mat_mul(b, a)
 =======
+=======
+>>>>>>> parent of 0acbc55 (update)
 =======
 >>>>>>> parent of 0acbc55 (update)
     # b = sparse_mat (mat=[ [1, 0], [0, 1] ])
