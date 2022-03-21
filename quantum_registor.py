@@ -1,6 +1,9 @@
 import numpy as np
 <<<<<<< HEAD
+<<<<<<< HEAD
 from dense_mat import dense_mat
+=======
+>>>>>>> parent of 0acbc55 (update)
 =======
 >>>>>>> parent of 0acbc55 (update)
 import mat_math_util
@@ -19,6 +22,7 @@ class quantum_registor ():
         self.qbits[n] = state
     
 <<<<<<< HEAD
+<<<<<<< HEAD
     def h_all (self):
         h = dense_mat((1 / np.sqrt(2)) * np.array([[1, 1,], [1, -1]]))
         m = h
@@ -30,6 +34,8 @@ class quantum_registor ():
         '''Apply hadamard to nth qbit.'''
         pass
 
+=======
+>>>>>>> parent of 0acbc55 (update)
 =======
 >>>>>>> parent of 0acbc55 (update)
     def state (self):
