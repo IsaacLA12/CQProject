@@ -84,7 +84,7 @@ def vec_scalar_mul (scalar, vector):
 
 def vec_tensor (left, right): # tested
     '''Vector tensor product. ( [ left vector ](x)[ right vector ] )'''
-    arr = np.zeros (len(left) * len(right))
+    arr = np.zeros (len(left) * len(right), dtype=complex)
     idx = 0
     for i in left:
         for j in right:

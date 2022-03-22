@@ -1,84 +1,81 @@
 import numpy as np
 import mat_math_util
-import matplotlib.pyplot as plt
 
 from dense_mat import dense_mat
 from sparse_mat import sparse_mat
-from lazy_mat import lazy_mat
 
 class quantum_registor ():
     
     def __init__ (self, size):
-        self.size = size
+        self.size = size; self.size_ = int(2**size)
+        self.steps = []
         self.matrix = mat_math_util.identity(size)
+        # initialize the state vector
         qbits = []
         for i in range(size):
             qbits.append([1,0])
         self.state = mat_math_util.vec_tensor_all(qbits)
-        
-    
-    def set_initial_state (self, n, state):
-        self.qbits[n] = state
     
     def H_all (self):
-        '''H gate to all qbits. Initialization only.'''
+        '''H-gate to all qbits.'''
         h = dense_mat((1/np.sqrt(2)) * np.array([[1, 1], [1, -1]]))
         m = dense_mat(np.array([[1]]))
         for i in range (self.size):
             m = mat_math_util.mat_tensor(h, m)
-        self.matrix = mat_math_util.mat_mul(self.matrix, m)
+        self.steps.append(m)
+        # self.matrix = mat_math_util.mat_mul(self.matrix, m)
     
-    def G (self):
+    def grover (self):
         '''The input s should be a numpy 1d array'''
-        psi_ket = np.reshape(np.array(self.state), (len(s), 1))
+        psi_ket = np.full((self.size_, 1), 1/np.sqrt(self.size_))
         m = 2*psi_ket@psi_ket.T - np.eye(int(2**self.size))
-        self.matrix = mat_math_util.mat_mul(self.matrix, sparse_mat(m))
+        self.steps.append(sparse_mat(m))
+        # self.matrix = mat_math_util.mat_mul(self.matrix, sparse_mat(m))
     
-    def O (self, s:np.ndarray):
+    def oracle (self, s:np.ndarray):
         '''The input s should be a numpy 1d array'''
         s_ket = np.reshape(s, (len(s), 1))
         m = np.eye(int(2**self.size)) - 2*s_ket@s_ket.T
-        self.matrix = mat_math_util.mat_mul(self.matrix, sparse_mat(m))
+        self.steps.append(sparse_mat(m))
+        # self.matrix = mat_math_util.mat_mul(self.matrix, sparse_mat(m))
+        
+    def shors_U (self, N, g):
+        self.steps.append(('shors_U', N, g))
     
-    def measure (self):
+    def qft (self):
+        """Creates the QFT matrix (nxn numpy array)"""
+        n = self.size_
+        j = complex(0,1)
+        Q = np.zeros((n,n),dtype=complex)
+        W = np.exp(2*np.pi*j/n)
+        for i in range(n):
+            for k in range(n):
+                Q[i][k] = W**(i*k)     
+        self.steps.append(dense_mat(Q))
+
+    def apply_mat (self):
         self.state = mat_math_util.apply(self.matrix, self.state)
         self.matrix = mat_math_util.identity(self.size)
+    
+    def measure (self):
+        """Measure the quantum states. Activate the matrix calculation, and update the state vector."""
+        for step in self.steps:
+            if type(step) == tuple:
+                self.apply_mat()
+                if step[0] == 'shors_U':
+                    _, n, g = step
+                    for i in range(self.size_):
+                        el = (g**(i+1))%n
+                        self.state[i] = el
+                        # print (el)
+            else:
+                self.matrix = mat_math_util.mat_mul(self.matrix, step)
+        self.steps = []
+        self.apply_mat()
+        
         norm_p = self.state**2
         norm_p *= 1 / np.sum(norm_p) # normalize
-        # plotting
-        s_ = [f'|{i}⟩' for i in range(int(2**self.size))]
-        plt.bar(s, norm_p)
-        plt.xlabel('State')
-        plt.ylabel('P')
-        plt.show()
-
-def test_g(psi, n=3):
-    psi_ket = np.reshape(np.array(psi), (len(psi), 1))
-    return 2*psi_ket@psi_ket.T - np.eye(int(2**n))
-    
-def test_o(s, n=3):
-    s_ket = np.reshape(np.array(s), (len(s), 1))
-    return np.eye(int(2**n)) - 2*s_ket@s_ket.T
-
-if __name__ == '__main__':
-    s = np.zeros(8)
-    s[2] = 1
-    states = [np.full(8, 1/np.sqrt(8))]
-    print (test_o(s))
-    print (test_g(states[0]))
-    exit()
-    for i in range(10):
-        state = states[-1]
-        state_ket = np.reshape(np.array(state), (len(state), 1))
-        result = test_g(np.full(8, 1/np.sqrt(8)))@test_o(s)@state_ket
-        states.append(result.flatten())
-        
-        s_ = [f'|{i}⟩' for i in range(8)]
-        p = states[-1]**2
-        p /= np.sum(p)
-        plt.title(f'{i}')
-        plt.bar(s_, p)
-        plt.show()
+        return norm_p
     
     
     # qr = quantum_registor(3)

@@ -66,8 +66,14 @@ def test5 (): # lazy mat
     print ( b.nparray()@(a.nparray()@b.nparray()) )
     # print (b.left_mat_dot(a.nparray()))
     # print (a.nparray()@np.array([ [1, 0], [0, 1] ]))
-    
+
+import shors_final as sf
 if __name__ == '__main__':
-    # r = quantum_registor(3)
-    # print (r.state())
-    test5()
+    N = 221; g = 12
+    qr = quantum_registor(8)
+    qr.state = np.ones(qr.size_, dtype=complex)
+    qr.shors_U(N, g)
+    qr.measure()
+    print (qr.state)
+    
+    sf.plot_qft(N, g)
